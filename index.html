@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ranking General</title>
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+
+body{
+  font-family: Arial, Helvetica, sans-serif;
+  background:radial-gradient(circle at top,#050a1a,#000);
+  color:#fff;
+  overflow-x:hidden;
+}
+
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  background:
+    linear-gradient(120deg,rgba(0,140,255,.08),transparent 40%),
+    linear-gradient(300deg,rgba(255,215,0,.08),transparent 40%);
+  animation:bgmove 14s linear infinite;
+  z-index:-1;
+}
+@keyframes bgmove{
+  from{filter:hue-rotate(0deg);}
+  to{filter:hue-rotate(360deg);}
+}
+
+header{
+  text-align:center;
+  padding:25px 10px;
+}
+header h1{
+  font-size:2.4em;
+  color:gold;
+  text-shadow:0 0 10px gold,0 0 25px rgba(0,140,255,.8);
+}
+header p{
+  color:#6ecbff;
+}
+
+.container{
+  max-width:950px;
+  margin:auto;
+  padding:20px;
+}
+
+.item{
+  background:linear-gradient(135deg,#060c22,#000);
+  margin:10px 0;
+  padding:14px 18px;
+  border-radius:12px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  border:1px solid rgba(255,215,0,.25);
+  position:relative;
+  overflow:hidden;
+  box-shadow:0 0 15px rgba(0,140,255,.25);
+  animation:slideIn .6s ease forwards;
+}
+@keyframes slideIn{
+  from{opacity:0;transform:translateX(-60px);}
+  to{opacity:1;transform:translateX(0);}
+}
+
+.item::before{
+  content:"";
+  position:absolute;
+  inset:-50%;
+  background:linear-gradient(120deg,transparent,rgba(0,140,255,.18),transparent);
+  animation:shine 5s linear infinite;
+}
+@keyframes shine{
+  from{transform:rotate(0deg);}
+  to{transform:rotate(360deg);}
+}
+
+.item:hover{
+  transform:scale(1.02);
+  box-shadow:0 0 25px rgba(0,140,255,.6),0 0 35px rgba(255,215,0,.4);
+}
+
+.left{
+  display:flex;
+  gap:15px;
+  align-items:center;
+}
+.rank{
+  font-weight:bold;
+  color:gold;
+  min-width:55px;
+}
+.name{font-size:1em;}
+.amount{
+  font-weight:bold;
+  color:#6ecbff;
+}
+
+.top1{border:2px solid gold;}
+.top2{border:2px solid #b8e4ff;}
+.top3{border:2px solid #6ecbff;}
+
+footer{
+  text-align:center;
+  padding:25px;
+  font-size:13px;
+  opacity:.7;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>🏆 RANKING GENERAL</h1>
+  <p>Top recargueros SV</p>
+</header>
+
+<div class="container" id="list"></div>
+
+<footer>
+  © 2026 | Sistema de Soft Corporatión 
+</footer>
+
+<script>
+const teams = [
+  { name: "GHIKASOLA", amount: 7818.99 }, 
+  { name: "AZ127", amount: 6891.49 }, 
+  { name: "MEVNCANO", amount: 2871.24 }, 
+  { name: "SATIZX", amount: 2091.81 }, 
+  { name: "HYUNBRADY", amount: 1887.49 }, 
+  { name: "ANZNXADA", amount: 1789.49 }, 
+  { name: "ANEXZOL", amount: 1789.10 }, 
+
+  { name: "ShadowForce", amount: 1200.00 }, 
+  { name: "NightHunters", amount: 1185.40 }, 
+  { name: "DarkVortex", amount: 1170.30 }, 
+  { name: "PhantomSquad", amount: 1155.20 }, 
+  { name: "IronLegion", amount: 1140.10 }, 
+  { name: "CyberStrike", amount: 1125.00 }, 
+  { name: "NovaForce", amount: 1110.75 }, 
+  { name: "GhostNation", amount: 1098.20 }, 
+  { name: "AlphaRaid", amount: 1084.60 }, 
+  { name: "BlackPhantom", amount: 1070.00 }, 
+
+  { name: "StormLegion", amount: 1055.80 }, 
+  { name: "PixelForce", amount: 1042.30 }, 
+  { name: "VenomSquad", amount: 1028.90 }, 
+  { name: "FatalStrike", amount: 1015.40 }, 
+  { name: "DarkNova", amount: 1002.10 }, 
+  { name: "ThunderLegion", amount: 988.60 }, 
+  { name: "SkullRaid", amount: 975.20 }, 
+  { name: "FireNation", amount: 962.80 }, 
+  { name: "CyberPhantom", amount: 949.30 }, 
+  { name: "ShadowRaid", amount: 935.90 }, 
+
+  { name: "ShadowUnit", amount: 920.00 }, 
+  { name: "NightUnit", amount: 915.40 }, 
+  { name: "DarkUnit", amount: 910.10 }, 
+  { name: "PhantomUnit", amount: 905.60 }, 
+  { name: "IronUnit", amount: 900.20 }, 
+  { name: "CyberUnit", amount: 895.80 }, 
+  { name: "NovaUnit", amount: 890.30 }, 
+  { name: "GhostUnit", amount: 885.00 }, 
+  { name: "AlphaUnit", amount: 879.60 }, 
+  { name: "BlackUnit", amount: 874.20 }, 
+  { name: "StormUnit", amount: 868.90 }, 
+  { name: "PixelUnit", amount: 863.50 }, 
+  { name: "VenomUnit", amount: 858.10 }, 
+  { name: "FatalUnit", amount: 852.80 }, 
+  { name: "ThunderUnit", amount: 847.40 }, 
+  { name: "SkullUnit", amount: 842.00 }, 
+  { name: "FireUnit", amount: 836.60 }, 
+
+  { name: "DarkZone", amount: 831.20 }, 
+  { name: "NightZone", amount: 825.90 }, 
+  { name: "ShadowZone", amount: 820.50 }, 
+  { name: "PhantomZone", amount: 815.10 }, 
+  { name: "IronZone", amount: 809.80 }, 
+  { name: "CyberZone", amount: 804.40 }, 
+  { name: "NovaZone", amount: 799.00 }, 
+  { name: "GhostZone", amount: 793.60 }, 
+  { name: "AlphaZone", amount: 788.20 }, 
+  { name: "BlackZone", amount: 782.90 }, 
+  { name: "StormZone", amount: 777.50 }, 
+  { name: "PixelZone", amount: 772.10 }, 
+  { name: "VenomZone", amount: 766.80 }, 
+  { name: "FatalZone", amount: 761.40 }, 
+  { name: "ThunderZone", amount: 756.00 }, 
+  { name: "SkullZone", amount: 750.60 }, 
+  { name: "FireZone", amount: 745.20 }, 
+
+  { name: "DarkCore", amount: 739.80 }, 
+  { name: "NightCoreX", amount: 734.50 }, 
+  { name: "ShadowCoreX", amount: 729.10 }, 
+  { name: "PhantomCore", amount: 723.70 }, 
+  { name: "IronCore", amount: 718.40 }, 
+  { name: "CyberCore", amount: 713.00 }, 
+  { name: "NovaCore", amount: 707.60 }, 
+  { name: "GhostCore", amount: 702.20 }, 
+  { name: "AlphaCore", amount: 696.90 }, 
+  { name: "BlackCore", amount: 691.50 }, 
+  { name: "StormCore", amount: 686.10 }, 
+  { name: "PixelCore", amount: 680.80 }, 
+  { name: "VenomCore", amount: 675.40 }, 
+  { name: "FatalCore", amount: 670.00 }, 
+  { name: "ThunderCore", amount: 664.60 }, 
+  { name: "SkullCore", amount: 659.20 }, 
+  { name: "FireCore", amount: 653.80 }, 
+
+  { name: "DarkRiders", amount: 648.50 }, 
+  { name: "NightRiders", amount: 643.10 }, 
+  { name: "ShadowRiders", amount: 637.70 }, 
+  { name: "PhantomRiders", amount: 632.40 }, 
+  { name: "IronRiders", amount: 627.00 }, 
+  { name: "CyberRiders", amount: 621.60 }, 
+  { name: "NovaRiders", amount: 616.20 }, 
+  { name: "GhostRidersX", amount: 610.90 }, 
+  { name: "AlphaRiders", amount: 605.50 }, 
+  { name: "BlackRiders", amount: 600.10 }, 
+  { name: "StormRiders", amount: 594.80 }, 
+  { name: "PixelRiders", amount: 589.40 },
+{ name: "APZ128", amount: 587.50 }, 
+{ name: "the RESREAM", amount: 550.81 }, 
+{ name: "the RMZXC", amount: 520.50 }, 
+{ name: "MONTONSKA", amount: 478.19 },
+{ name: "TOMIOKBZ", amount: 450.10 },  
+{ name: "BESTGAMES", amount: 438.50 },
+{ name: "ALPHA123", amount: 421.30 }, { name: "RMC182", amount: 411.65 }, { name: "ÇLªN-THZ", amount: 389.21 }, 
+];
+
+const list = document.getElementById("list");
+
+teams.forEach((t,i)=>{
+  const div = document.createElement("div");
+  div.className = "item";
+  if(i===0) div.classList.add("top1");
+  if(i===1) div.classList.add("top2");
+  if(i===2) div.classList.add("top3");
+  div.style.animationDelay = `${i*0.03}s`;
+
+  div.innerHTML = `
+    <div class="left">
+      <div class="rank">#${i+1}</div>
+      <div class="name">${t.name}</div>
+    </div>
+    <div class="amount">$${t.amount.toLocaleString()}</div>
+  `;
+  list.appendChild(div);
+});
+</script>
+
+</body>
+</html>
