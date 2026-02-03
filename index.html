@@ -1,421 +1,341 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neon Breaker: Baseball Edition</title>
+    <title>Arcade Ultimate: Nebula & Breaker</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            background: #05050a;
-            font-family: 'Arial Black', sans-serif;
-            touch-action: none;
-            user-select: none;
-        }
-        canvas { display: block; filter: drop-shadow(0 0 10px rgba(0,0,0,0.5)); }
+        body { margin: 0; overflow: hidden; background: #020205; font-family: 'Arial Black', sans-serif; touch-action: none; user-select: none; }
+        canvas { display: block; }
         
-        #ui {
-            position: absolute;
-            top: 0; left: 0; width: 100%;
-            padding: 20px;
-            pointer-events: none;
-            display: flex;
-            justify-content: space-between;
-            z-index: 10;
+        #capa-menu {
+            position: fixed; inset: 0; background: radial-gradient(circle at center, #1a1a2e 0%, #020205 100%);
+            display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 1000;
         }
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.05);
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            padding: 10px 20px;
-            border-radius: 15px;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            color: white;
+        .btn-menu {
+            padding: 20px 40px; margin: 15px; font-size: 1.5rem; color: white;
+            font-weight: 900; border-radius: 20px; border: 2px solid rgba(255,255,255,0.1); cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); width: 320px; text-transform: uppercase;
+        }
+        .btn-menu:hover { transform: scale(1.05); filter: brightness(1.2); }
+        .btn-nebula { background: linear-gradient(45deg, #ff0080, #7000ff); box-shadow: 0 10px 30px rgba(255, 0, 128, 0.4); }
+        .btn-breaker { background: linear-gradient(45deg, #00d4ff, #0044ff); box-shadow: 0 10px 30px rgba(0, 212, 255, 0.4); }
+
+        .glass { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); backdrop-filter: blur(15px); }
+        
+        /* LA X ARRIBA EN MEDIO Y PEQUEÑA */
+        #btn-cerrar {
+            position: fixed; top: 10px; left: 50%; transform: translateX(-50%);
+            width: 35px; height: 35px; background: rgba(255, 0, 0, 0.4);
+            color: white; border: 1px solid white; border-radius: 50%;
+            font-size: 16px; font-weight: bold; cursor: pointer;
+            z-index: 4000; display: none; backdrop-filter: blur(5px);
         }
 
         #rblx-bubble {
-            position: absolute;
-            bottom: 30px; right: 30px;
-            width: 85px; height: 85px;
-            background: linear-gradient(135deg, #ff00ff, #7000ff);
-            border-radius: 20px;
-            display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            color: white; font-weight: bold;
-            box-shadow: 0 15px 35px rgba(112, 0, 255, 0.4), inset 0 0 15px rgba(255,255,255,0.5);
-            z-index: 2000; cursor: pointer;
-            border: 2px solid white;
-            animation: bounce 2s infinite;
-            pointer-events: auto;
+            position: absolute; bottom: 30px; right: 30px; width: 95px; height: 95px;
+            background: linear-gradient(135deg, #00f2fe, #4facfe); border-radius: 30px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: white; font-weight: 900; z-index: 2000; cursor: pointer;
+            border: 3px solid white; animation: float 4s ease-in-out infinite;
         }
-
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0) rotate(5deg); }
-            50% { transform: translateY(-15px) rotate(-5deg); }
+        @keyframes float { 0%, 100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-25px) rotate(3deg); } }
+        
+        #corazon-roto {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 100px; display: none; pointer-events: none; z-index: 3000;
         }
-
-        #transfer-modal {
-            position: absolute; inset: 0;
-            background: rgba(0,0,0,0.9);
-            display: flex; align-items: center; justify-content: center;
-            z-index: 3000; padding: 20px;
-        }
-
-        .btn-premium {
-            background: white; color: black;
-            padding: 15px 40px; border-radius: 12px;
-            font-weight: 900; cursor: pointer; border: none;
-            transition: 0.2s; box-shadow: 0 5px 0 #999;
-        }
-        .btn-premium:active { transform: translateY(3px); box-shadow: 0 2px 0 #999; }
-
-        #reward-popup {
-            position: absolute; top: 40%; left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 4rem; font-weight: 900;
-            color: #4ade80; text-shadow: 3px 3px 0 #064e3b, 0 0 30px rgba(74, 222, 128, 0.5);
-            pointer-events: none; opacity: 0; z-index: 5000;
-        }
-
+        .animar-corazon { animation: heartBreak 0.8s forwards; display: block !important; }
+        @keyframes heartBreak { 0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; } 100% { transform: translate(-50%, -200%) scale(3); opacity: 0; } }
+        
         .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-    <div id="ui">
-        <div class="glass-panel text-center">
-            <div class="text-xs text-gray-400">SCORE</div>
-            <div id="score" class="text-2xl font-black">0</div>
-        </div>
-        <div class="glass-panel text-center border-red-500/30">
-            <div id="lives" class="text-xl font-black text-red-500 italic">5 VIDAS</div>
-        </div>
+<button id="btn-cerrar" onclick="volverAlMenu()">✕</button>
+
+<div id="capa-menu">
+    <h1 class="text-white text-6xl font-black mb-16 italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-600">ARCADE PRO</h1>
+    <div id="menu-inicio">
+        <button class="btn-menu bg-white/5" onclick="irASeleccion()">JUGAR</button>
     </div>
-
-    <div id="rblx-bubble">
-        <span class="text-[10px] opacity-80">RBLX</span>
-        <span id="rblx-count" class="text-2xl font-black">0</span>
+    <div id="menu-seleccion" class="hidden text-center">
+        <button class="btn-menu btn-nebula" onclick="iniciarGame('nebula')">BLOCK NEBULA</button>
+        <button class="btn-menu btn-breaker" onclick="iniciarGame('breaker')">ULTRA BREAKER</button>
     </div>
+</div>
 
-    <div id="reward-popup">+1 RBLX</div>
+<div id="corazon-roto">💔</div>
 
-    <div id="overlay" class="bg-black/90 fixed inset-0 z-[1000] flex flex-col items-center justify-center">
-        <h1 class="text-6xl font-black text-white mb-4 italic tracking-tighter">ULTRA BREAKER</h1>
-        <p class="text-purple-400 mb-10 tracking-[0.5em] text-xs">TEXTURES & PHYSICS ENGINE</p>
-        <button id="play-btn" class="btn-premium text-2xl px-12">EMPEZAR</button>
+<div id="ui" class="hidden fixed top-0 w-full p-6 flex justify-between pointer-events-none z-50">
+    <div class="glass p-4 rounded-2xl text-center min-w-[100px]">
+        <div class="text-[8px] text-cyan-400 font-bold uppercase">Puntos</div>
+        <div id="score" class="text-3xl font-black text-white">0</div>
     </div>
-
-    <div id="transfer-modal" class="hidden">
-        <div class="bg-slate-900 border-2 border-purple-500 p-8 rounded-3xl text-center max-w-sm w-full shadow-2xl">
-            <h2 class="text-xl font-bold text-gray-400 mb-2 uppercase">Balance Rblx</h2>
-            <div class="text-7xl font-black text-white mb-6" id="modal-rblx-count">0</div>
-            
-            <button id="ai-btn" class="w-full bg-purple-600 text-white py-3 rounded-xl font-bold mb-4 hover:bg-purple-500 transition">
-                🧠 ESTRATEGIA IA
-            </button>
-            <div id="ai-suggestion" class="text-sm text-purple-200 italic mb-6 bg-purple-900/30 p-4 rounded-xl border border-purple-500/30 min-h-[60px]">
-                Esperando estratega...
-            </div>
-
-            <button id="transfer-btn" class="w-full bg-green-500 text-white py-4 rounded-xl font-black text-xl mb-4 hover:bg-green-400 transition">
-                TRANSFERIR
-            </button>
-            <button id="close-modal" class="text-gray-500 font-bold uppercase text-xs tracking-widest">Cerrar</button>
-        </div>
+    <div class="glass p-4 rounded-2xl text-center min-w-[100px]">
+        <div id="lives" class="text-xl font-black text-red-500 italic">3 VIDAS</div>
     </div>
+</div>
 
-    <canvas id="gameCanvas"></canvas>
+<div id="rblx-bubble">
+    <span class="text-xs">RBLX</span>
+    <span id="rblx-count" class="text-4xl font-black">0</span>
+</div>
 
-    <script>
-        const apiKey = ""; 
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const scoreEl = document.getElementById('score');
-        const livesEl = document.getElementById('lives');
-        const rblxEl = document.getElementById('rblx-count');
-        const modalRblxEl = document.getElementById('modal-rblx-count');
-        const rewardPopup = document.getElementById('reward-popup');
-        const overlay = document.getElementById('overlay');
-        const transferModal = document.getElementById('transfer-modal');
-        const aiBtn = document.getElementById('ai-btn');
-        const aiSuggestion = document.getElementById('ai-suggestion');
+<div id="transfer-modal" class="hidden fixed inset-0 bg-black/95 z-[5000] flex items-center justify-center p-8">
+    <div class="glass border-cyan-500/30 p-12 rounded-[40px] text-center max-w-sm w-full">
+        <h2 class="text-cyan-400 text-xs mb-3 font-black uppercase">Balance RBLX</h2>
+        <div id="modal-rblx-count" class="text-8xl font-black text-white mb-10">0</div>
+        <button id="transfer-btn" class="w-full bg-cyan-500 text-white py-6 rounded-2xl font-black text-2xl mb-6">TRANSFERIR</button>
+        <button onclick="cerrarModal()" class="text-gray-500 font-bold">CERRAR</button>
+    </div>
+</div>
 
-        let gameActive = false;
-        let score = 0;
-        let lives = 5;
-        let rblxPoints = parseInt(localStorage.getItem('rblxPoints')) || 0;
-        let lastRewardScore = 0;
-        let bricks = [];
-        let particles = [];
-        let ballRotation = 0;
+<canvas id="gameCanvas"></canvas>
 
-        const paddle = { w: 140, h: 22, x: 0, y: 0 };
-        const ball = { x: 0, y: 0, r: 10, dx: 0, dy: 0, speed: 7 };
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('score');
+    const livesEl = document.getElementById('lives');
+    const rblxEl = document.getElementById('rblx-count');
+    const modalRblxEl = document.getElementById('modal-rblx-count');
+    const transferModal = document.getElementById('transfer-modal');
+    const btnCerrar = document.getElementById('btn-cerrar');
+    
+    let currentGame = null, gameActive = false, score = 0, lives = 3, rblxPoints = parseInt(localStorage.getItem('rblxPoints')) || 0;
+    let particles = [], nebulaGrid = [], currentBlocks = [], draggingBlock = null;
+    let dragOffsetX = 0, dragOffsetY = 0, lastPointerX = 0, lastPointerY = 0;
+    rblxEl.innerText = rblxPoints;
 
-        rblxEl.innerText = rblxPoints;
+    const paddle = { w: 150, h: 22, x: 0, y: 0 };
+    const ball = { x: 0, y: 0, r: 10, dx: 0, dy: 0, speed: 7.5 };
+    let bricks = [];
 
-        // --- GEMINI AI ---
-        async function fetchAISuggestion() {
-            aiSuggestion.innerText = "Consultando al experto...";
-            aiBtn.disabled = true;
-            try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: `El jugador tiene ${rblxPoints} puntos Rblx y una puntuación de ${score}. Dale un consejo de 10 palabras sobre cómo ganar más puntos rompiendo bloques.` }] }],
-                        systemInstruction: { parts: [{ text: "Eres un coach de eSports agresivo y motivador." }] }
-                    })
-                });
-                const data = await response.json();
-                aiSuggestion.innerText = data.candidates?.[0]?.content?.parts?.[0]?.text || "¡Dale duro a esos ladrillos!";
-            } catch (e) {
-                aiSuggestion.innerText = "¡Enfócate! ¡Cada rebote cuenta para tu fortuna!";
-            }
-            aiBtn.disabled = false;
+    function irASeleccion() {
+        document.getElementById('menu-inicio').classList.add('hidden');
+        document.getElementById('menu-seleccion').classList.remove('hidden');
+    }
+
+    function iniciarGame(tipo) {
+        document.getElementById('capa-menu').classList.add('hidden');
+        document.getElementById('ui').classList.remove('hidden');
+        btnCerrar.style.display = 'block';
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        currentGame = tipo;
+        score = 0; scoreEl.innerText = "0";
+        gameActive = true;
+        particles = [];
+
+        if (tipo === 'breaker') {
+            lives = 3; livesEl.innerText = "3 VIDAS";
+            paddle.y = canvas.height - 130; paddle.x = canvas.width/2 - 75;
+            createBricks(); resetBall();
+        } else {
+            livesEl.innerText = "NEBULA";
+            nebulaGrid = Array(8).fill().map(() => Array(8).fill(0));
+            generateNebulaBlocks();
         }
-        aiBtn.onclick = fetchAISuggestion;
+        requestAnimationFrame(gameLoop);
+    }
 
-        // --- MOTOR GRÁFICO ---
-        function drawBrick(b) {
-            // Sombra del ladrillo
-            ctx.shadowColor = 'rgba(0,0,0,0.8)';
-            ctx.shadowBlur = 15;
-            ctx.shadowOffsetX = 5;
-            ctx.shadowOffsetY = 8;
+    function volverAlMenu() {
+        gameActive = false;
+        document.getElementById('ui').classList.add('hidden');
+        btnCerrar.style.display = 'none';
+        document.getElementById('capa-menu').classList.remove('hidden');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
 
-            // Cuerpo del ladrillo (Textura 🧱)
-            ctx.fillStyle = b.color;
-            ctx.beginPath();
-            ctx.roundRect(b.x, b.y, b.w, b.h, 3);
-            ctx.fill();
-
-            // Detalles de cemento/ladrillo
-            ctx.shadowColor = 'transparent';
-            ctx.strokeStyle = 'rgba(0,0,0,0.3)';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(b.x, b.y, b.w, b.h);
-
-            // Líneas de textura 🧱
-            ctx.strokeStyle = 'rgba(255,255,255,0.1)';
-            ctx.beginPath();
-            ctx.moveTo(b.x + b.w/2, b.y); ctx.lineTo(b.x + b.w/2, b.y + b.h);
-            ctx.moveTo(b.x, b.y + b.h/2); ctx.lineTo(b.x + b.w, b.y + b.h/2);
-            ctx.stroke();
-
-            // Brillo superior
-            ctx.fillStyle = 'rgba(255,255,255,0.15)';
-            ctx.fillRect(b.x + 2, b.y + 2, b.w - 4, 3);
+    function chequearRblx(meta) {
+        if (score > 0 && score % meta === 0) {
+            rblxPoints++;
+            localStorage.setItem('rblxPoints', rblxPoints);
+            rblxEl.innerText = rblxPoints;
         }
+    }
 
-        function drawBall() {
-            ctx.save();
-            ctx.translate(ball.x, ball.y);
-            ctx.rotate(ballRotation);
-
-            // Sombra de la pelota proyectada en el fondo
-            ctx.shadowColor = 'rgba(0,0,0,0.6)';
-            ctx.shadowBlur = 10;
-            ctx.shadowOffsetY = 15;
-
-            // Pelota de Béisbol (Blanca)
-            ctx.fillStyle = '#fff';
-            ctx.beginPath();
-            ctx.arc(0, 0, ball.r, 0, Math.PI*2);
-            ctx.fill();
-
-            // Costuras Rojas ⚾
-            ctx.strokeStyle = '#f00';
-            ctx.lineWidth = 1.5;
-            ctx.beginPath();
-            ctx.arc(-ball.r*0.8, 0, ball.r, -0.5, 0.5);
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.arc(ball.r*0.8, 0, ball.r, Math.PI - 0.5, Math.PI + 0.5);
-            ctx.stroke();
-
-            ctx.restore();
-            ballRotation += (Math.abs(ball.dx) + Math.abs(ball.dy)) * 0.05;
+    // --- LOGICA NEBULA: DESTRUCCIÓN ---
+    function checkLinesNebula() {
+        let rFull = [], cFull = [];
+        for(let r=0; r<8; r++) if(nebulaGrid[r].every(v => v !== 0)) rFull.push(r);
+        for(let c=0; c<8; c++) {
+            let f = true; for(let r=0; r<8; r++) if(nebulaGrid[r][c] === 0) f = false;
+            if(f) cFull.push(c);
         }
+        rFull.forEach(r => {
+            for(let c=0; c<8; c++) { createExplosion(c, r, nebulaGrid[r][c]); nebulaGrid[r][c] = 0; }
+            score += 100;
+        });
+        cFull.forEach(c => {
+            for(let r=0; r<8; r++) { if(nebulaGrid[r][c]) { createExplosion(c, r, nebulaGrid[r][c]); nebulaGrid[r][c] = 0; } }
+            score += 100;
+        });
+        scoreEl.innerText = score;
+        chequearRblx(600);
+    }
 
-        function drawPaddle() {
-            // Sombra de paleta
-            ctx.shadowColor = 'rgba(0,0,0,0.5)';
-            ctx.shadowBlur = 20;
-            ctx.shadowOffsetY = 10;
-
-            let grad = ctx.createLinearGradient(paddle.x, paddle.y, paddle.x, paddle.y + paddle.h);
-            grad.addColorStop(0, '#334155');
-            grad.addColorStop(0.5, '#94a3b8');
-            grad.addColorStop(1, '#1e293b');
-
-            ctx.fillStyle = grad;
-            ctx.beginPath();
-            ctx.roundRect(paddle.x, paddle.y, paddle.w, paddle.h, 12);
-            ctx.fill();
-            
-            // Reflejo metálico
-            ctx.fillStyle = 'rgba(255,255,255,0.3)';
-            ctx.fillRect(paddle.x + 10, paddle.y + 4, paddle.w - 20, 4);
-            ctx.shadowBlur = 0;
+    function createExplosion(c, r, col) {
+        const sz = 40, off = (canvas.width - (8*sz))/2;
+        for(let i=0; i<8; i++) {
+            particles.push({x: c*sz+off+20, y: r*sz+150+20, dx: (Math.random()-0.5)*12, dy: (Math.random()-0.5)*12, life: 1, color: col});
         }
+    }
 
-        // --- LÓGICA DE JUEGO ---
-        function createBricks() {
-            const rows = 5, cols = 6, pad = 12;
-            const bW = (canvas.width - 60 - (cols - 1) * pad) / cols;
-            const colors = ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6'];
-            bricks = [];
-            for(let r = 0; r < rows; r++) {
-                for(let c = 0; c < cols; c++) {
-                    bricks.push({
-                        x: c * (bW + pad) + 30,
-                        y: r * (28 + pad) + 120,
-                        w: bW, h: 28, color: colors[r], active: true
-                    });
-                }
+    // --- DIBUJO ---
+    function drawBox(x, y, w, h, color, neon = true) {
+        ctx.save();
+        if(neon) { ctx.shadowBlur = 15; ctx.shadowColor = color; }
+        ctx.fillStyle = color;
+        ctx.beginPath(); ctx.roundRect(x, y, w, h, 8); ctx.fill();
+        ctx.restore();
+    }
+
+    function createBricks() {
+        bricks = [];
+        const cols = 7, rows = 5;
+        const w = (canvas.width - 40) / cols;
+        for(let r=0; r<rows; r++) {
+            for(let c=0; c<cols; c++) {
+                bricks.push({ x: c*w + 20, y: r*40 + 100, w: w-10, h: 30, color: `hsl(${r*50 + 180}, 80%, 50%)`, active: true });
             }
         }
+    }
 
-        function update() {
-            if(!gameActive) return;
+    function resetBall() {
+        ball.x = canvas.width/2; ball.y = paddle.y - 20;
+        ball.dx = 5; ball.dy = -ball.speed;
+    }
 
-            ball.x += ball.dx;
-            ball.y += ball.dy;
-
-            // Colisiones bordes
-            if(ball.x + ball.r > canvas.width || ball.x - ball.r < 0) {
-                ball.dx *= -1.02; // Aceleración leve
-                ball.x = ball.x < ball.r ? ball.r : canvas.width - ball.r;
+    function updateBreaker() {
+        ball.x += ball.dx; ball.y += ball.dy;
+        if(ball.x < 10 || ball.x > canvas.width - 10) ball.dx *= -1;
+        if(ball.y < 10) ball.dy *= -1;
+        if(ball.y + ball.r > paddle.y && ball.x > paddle.x && ball.x < paddle.x + paddle.w) {
+            ball.dy = -ball.speed; ball.y = paddle.y - ball.r;
+        }
+        bricks.forEach(b => {
+            if(b.active && ball.x > b.x && ball.x < b.x + b.w && ball.y > b.y && ball.y < b.y + b.h) {
+                b.active = false; ball.dy *= -1; score += 10;
+                scoreEl.innerText = score; chequearRblx(300);
             }
-            if(ball.y - ball.r < 0) ball.dy *= -1;
+        });
+        if(ball.y > canvas.height) {
+            lives--;
+            document.getElementById('corazon-roto').classList.add('animar-corazon');
+            setTimeout(() => document.getElementById('corazon-roto').classList.remove('animar-corazon'), 800);
+            livesEl.innerText = lives + " VIDAS";
+            if(lives <= 0) volverAlMenu(); else resetBall();
+        }
+    }
 
-            // Colisión Paleta
-            if(ball.y + ball.r > paddle.y && ball.y - ball.r < paddle.y + paddle.h &&
-               ball.x + ball.r > paddle.x && ball.x - ball.r < paddle.x + paddle.w) {
-                let hit = (ball.x - (paddle.x + paddle.w/2)) / (paddle.w/2);
-                ball.dx = hit * ball.speed * 1.2;
-                ball.dy = -Math.abs(ball.speed);
-                ball.y = paddle.y - ball.r;
+    function generateNebulaBlocks() {
+        currentBlocks = [];
+        const colors = ['#ff0080', '#00d4ff', '#ffcc00', '#4ade80'];
+        const shapes = [[[1,1],[1,1]], [[1,1,1]], [[1]], [[1,1]], [[1,1,1],[0,1,0]]];
+        for(let i=0; i<3; i++) {
+            currentBlocks.push({
+                shape: shapes[Math.floor(Math.random()*shapes.length)],
+                color: colors[Math.floor(Math.random()*colors.length)],
+                x: (canvas.width/2 - 160) + i*110, y: canvas.height - 180, active: true
+            });
+        }
+    }
+
+    function gameLoop() {
+        if(!gameActive) return;
+        ctx.fillStyle = '#020205'; ctx.fillRect(0,0,canvas.width, canvas.height);
+        
+        if(currentGame === 'breaker') {
+            updateBreaker();
+            bricks.forEach(b => b.active && drawBox(b.x, b.y, b.w, b.h, b.color));
+            drawBox(paddle.x, paddle.y, paddle.w, paddle.h, '#00d4ff');
+            ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2); ctx.fill();
+        } else {
+            const sz = 40, off = (canvas.width - (8*sz))/2;
+            for(let r=0; r<8; r++) for(let c=0; c<8; c++) {
+                ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+                ctx.strokeRect(c*sz + off, r*sz + 150, sz, sz);
+                if(nebulaGrid[r][c]) drawBox(c*sz+off+1, r*sz+150+1, sz-2, sz-2, nebulaGrid[r][c]);
             }
-
-            // Puntos RBLX
-            if (score > 0 && score % 300 === 0 && score !== lastRewardScore) {
-                lastRewardScore = score;
-                rblxPoints++;
-                localStorage.setItem('rblxPoints', rblxPoints);
-                rblxEl.innerText = rblxPoints;
-                rewardPopup.style.opacity = 1;
-                setTimeout(() => rewardPopup.style.opacity = 0, 2000);
-            }
-
-            // Bloques con colisión física realista
-            for(let b of bricks) {
-                if(b.active && ball.x + ball.r > b.x && ball.x - ball.r < b.x + b.w &&
-                   ball.y + ball.r > b.y && ball.y - ball.r < b.y + b.h) {
-                    
-                    let prevX = ball.x - ball.dx;
-                    if (prevX + ball.r <= b.x || prevX - ball.r >= b.x + b.w) ball.dx *= -1;
-                    else ball.dy *= -1;
-                    
-                    b.active = false;
-                    score += 10;
-                    scoreEl.innerText = score;
-
-                    // Animación de escombros 🧱
-                    for(let i=0; i<8; i++) {
-                        particles.push({
-                            x: b.x + b.w/2, y: b.y + b.h/2,
-                            dx: (Math.random()-0.5)*12, dy: (Math.random()-0.5)*12,
-                            size: Math.random()*6 + 2, life: 1, color: b.color
-                        });
-                    }
-                    if(bricks.every(x => !x.active)) createBricks();
-                    break;
-                }
-            }
-
-            if(ball.y > canvas.height) {
-                lives--;
-                livesEl.innerText = lives + " VIDAS";
-                if(lives <= 0) gameActive = false, overlay.classList.remove('hidden');
-                else resetBall();
-            }
-
-            particles.forEach((p, i) => {
-                p.x += p.dx; p.y += p.dy; p.dy += 0.2; p.life -= 0.02;
-                if(p.life <= 0) particles.splice(i, 1);
+            currentBlocks.forEach((b, i) => {
+                if(!b.active) return;
+                let bx = (draggingBlock === i) ? lastPointerX - dragOffsetX : b.x;
+                let by = (draggingBlock === i) ? lastPointerY - dragOffsetY : b.y;
+                b.shape.forEach((row, r) => row.forEach((v, c) => {
+                    if(v) drawBox(bx + c*30, by + r*30, 26, 26, b.color, false);
+                }));
             });
         }
 
-        function resetBall() {
-            ball.x = paddle.x + paddle.w/2;
-            ball.y = paddle.y - ball.r - 20;
-            ball.dx = (Math.random()-0.5)*ball.speed;
-            ball.dy = -ball.speed;
-        }
-
-        function draw() {
-            // Fondo oscuro profundo
-            ctx.fillStyle = '#05050a';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            if(gameActive) {
-                bricks.forEach(b => { if(b.active) drawBrick(b); });
-                drawPaddle();
-                drawBall();
-                
-                particles.forEach(p => {
-                    ctx.globalAlpha = p.life;
-                    ctx.fillStyle = p.color;
-                    ctx.fillRect(p.x, p.y, p.size, p.size);
-                });
-                ctx.globalAlpha = 1;
-            }
-            update();
-            requestAnimationFrame(draw);
-        }
-
-        const move = (x) => {
-            if(!gameActive) return;
-            paddle.x = Math.max(0, Math.min(canvas.width - paddle.w, x - paddle.w/2));
-        };
-        window.addEventListener('mousemove', e => move(e.clientX));
-        window.addEventListener('touchmove', e => { move(e.touches[0].clientX); e.preventDefault(); }, {passive:false});
-
-        document.getElementById('play-btn').onclick = () => {
-            overlay.classList.add('hidden');
-            score = 0; lives = 5; lastRewardScore = 0;
-            scoreEl.innerText = 0; livesEl.innerText = "5 VIDAS";
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            paddle.y = canvas.height - 80;
-            createBricks(); resetBall();
-            gameActive = true;
-        };
-
-        document.getElementById('rblx-bubble').onclick = () => {
-            modalRblxEl.innerText = rblxPoints;
-            transferModal.classList.remove('hidden');
-        };
-
-        document.getElementById('close-modal').onclick = () => transferModal.classList.add('hidden');
-
-        document.getElementById('transfer-btn').onclick = () => {
-            const msg = encodeURIComponent(`Tengo ${rblxPoints} por lo cual quiero canjear por puntos Rblx`);
-            window.open(`https://wa.me/50373826693?text=${msg}`, '_blank');
-        };
-
-        window.addEventListener('resize', () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            paddle.y = canvas.height - 80;
+        particles.forEach((p, i) => {
+            p.x += p.dx; p.y += p.dy; p.life -= 0.02;
+            ctx.globalAlpha = p.life; ctx.fillStyle = p.color;
+            ctx.fillRect(p.x, p.y, 4, 4);
+            if(p.life <= 0) particles.splice(i, 1);
         });
+        ctx.globalAlpha = 1;
+        requestAnimationFrame(gameLoop);
+    }
 
-        draw();
-    </script>
+    const getPos = (e) => {
+        const r = canvas.getBoundingClientRect();
+        const cx = e.clientX || (e.touches && e.touches[0].clientX);
+        const cy = e.clientY || (e.touches && e.touches[0].clientY);
+        return { x: cx - r.left, y: cy - r.top };
+    }
+
+    window.onmousedown = window.ontouchstart = (e) => {
+        const p = getPos(e); lastPointerX = p.x; lastPointerY = p.y;
+        if(currentGame === 'nebula') {
+            currentBlocks.forEach((b, i) => {
+                if(b.active && p.x > b.x && p.x < b.x+100 && p.y > b.y && p.y < b.y+100) {
+                    draggingBlock = i; dragOffsetX = p.x - b.x; dragOffsetY = p.y - b.y;
+                }
+            });
+        }
+    };
+    window.onmousemove = window.ontouchmove = (e) => {
+        if(!gameActive) return;
+        const p = getPos(e); lastPointerX = p.x; lastPointerY = p.y;
+        if(currentGame === 'breaker') paddle.x = Math.max(0, Math.min(canvas.width - paddle.w, p.x - paddle.w/2));
+    };
+    window.onmouseup = window.ontouchend = () => {
+        if(currentGame === 'nebula' && draggingBlock !== null) {
+            let b = currentBlocks[draggingBlock];
+            let sz = 40, off = (canvas.width - (8*sz))/2;
+            let gx = Math.round((lastPointerX - dragOffsetX - off)/sz);
+            let gy = Math.round((lastPointerY - dragOffsetY - 150)/sz);
+            let fits = true;
+            b.shape.forEach((row, r) => row.forEach((v, c) => {
+                if(v) {
+                    let tr = gy+r, tc = gx+c;
+                    if(tr<0||tr>=8||tc<0||tc>=8||nebulaGrid[tr][tc]) fits = false;
+                }
+            }));
+            if(fits) {
+                b.shape.forEach((row, r) => row.forEach((v, c) => {
+                    if(v) nebulaGrid[gy+r][gx+c] = b.color;
+                }));
+                b.active = false; score += 40; scoreEl.innerText = score;
+                checkLinesNebula();
+                if(currentBlocks.every(x => !x.active)) generateNebulaBlocks();
+            }
+            draggingBlock = null;
+        }
+    };
+    function cerrarModal() { transferModal.classList.add('hidden'); }
+    document.getElementById('rblx-bubble').onclick = () => {
+        modalRblxEl.innerText = rblxPoints;
+        transferModal.classList.remove('hidden');
+    };
+    document.getElementById('transfer-btn').onclick = () => {
+        window.open(`https://wa.me/50373826693?text=Tengo ${rblxPoints} puntos Rblx`, '_blank');
+        rblxPoints = 0; localStorage.setItem('rblxPoints', 0); rblxEl.innerText = "0"; cerrarModal();
+    };
+</script>
 </body>
 </html>
