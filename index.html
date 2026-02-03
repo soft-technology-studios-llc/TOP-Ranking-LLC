@@ -24,7 +24,7 @@
 
         .glass { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); backdrop-filter: blur(15px); }
         
-        /* LA X ARRIBA EN MEDIO Y PEQUEÑA */
+        /* BOTÓN X PEQUEÑO Y ARRIBA */
         #btn-cerrar {
             position: fixed; top: 10px; left: 50%; transform: translateX(-50%);
             width: 35px; height: 35px; background: rgba(255, 0, 0, 0.4);
@@ -105,7 +105,8 @@
     const transferModal = document.getElementById('transfer-modal');
     const btnCerrar = document.getElementById('btn-cerrar');
     
-    let currentGame = null, gameActive = false, score = 0, lives = 3, rblxPoints = parseInt(localStorage.getItem('rblxPoints')) || 0;
+    let currentGame = null, gameActive = false, score = 0, lives = 3;
+    let rblxPoints = parseInt(localStorage.getItem('rblxPoints')) || 0;
     let particles = [], nebulaGrid = [], currentBlocks = [], draggingBlock = null;
     let dragOffsetX = 0, dragOffsetY = 0, lastPointerX = 0, lastPointerY = 0;
     rblxEl.innerText = rblxPoints;
@@ -132,6 +133,7 @@
 
         if (tipo === 'breaker') {
             lives = 3; livesEl.innerText = "3 VIDAS";
+            ball.speed = 7.5;
             paddle.y = canvas.height - 130; paddle.x = canvas.width/2 - 75;
             createBricks(); resetBall();
         } else {
@@ -150,64 +152,44 @@
         ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
 
-    function chequearRblx(meta) {
-        if (score > 0 && score % meta === 0) {
+    // MECANICA RBLX Y VELOCIDAD
+    function chequearProgreso(puntosSumados) {
+        const meta = (currentGame === 'breaker') ? 300 : 600;
+        if (Math.floor(score / meta) > Math.floor((score - puntosSumados) / meta)) {
             rblxPoints++;
             localStorage.setItem('rblxPoints', rblxPoints);
             rblxEl.innerText = rblxPoints;
+            if(currentGame === 'breaker') ball.speed += 0.5; // Sube velocidad cada 300
         }
     }
 
-    // --- LOGICA NEBULA: DESTRUCCIÓN ---
-    function checkLinesNebula() {
-        let rFull = [], cFull = [];
-        for(let r=0; r<8; r++) if(nebulaGrid[r].every(v => v !== 0)) rFull.push(r);
-        for(let c=0; c<8; c++) {
-            let f = true; for(let r=0; r<8; r++) if(nebulaGrid[r][c] === 0) f = false;
-            if(f) cFull.push(c);
-        }
-        rFull.forEach(r => {
-            for(let c=0; c<8; c++) { createExplosion(c, r, nebulaGrid[r][c]); nebulaGrid[r][c] = 0; }
-            score += 100;
-        });
-        cFull.forEach(c => {
-            for(let r=0; r<8; r++) { if(nebulaGrid[r][c]) { createExplosion(c, r, nebulaGrid[r][c]); nebulaGrid[r][c] = 0; } }
-            score += 100;
-        });
-        scoreEl.innerText = score;
-        chequearRblx(600);
-    }
-
-    function createExplosion(c, r, col) {
-        const sz = 40, off = (canvas.width - (8*sz))/2;
-        for(let i=0; i<8; i++) {
-            particles.push({x: c*sz+off+20, y: r*sz+150+20, dx: (Math.random()-0.5)*12, dy: (Math.random()-0.5)*12, life: 1, color: col});
-        }
-    }
-
-    // --- DIBUJO ---
     function drawBox(x, y, w, h, color, neon = true) {
         ctx.save();
         if(neon) { ctx.shadowBlur = 15; ctx.shadowColor = color; }
         ctx.fillStyle = color;
         ctx.beginPath(); ctx.roundRect(x, y, w, h, 8); ctx.fill();
+        // TEXTURA DE BORDE
+        ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x+2, y+2, w-4, h-4);
         ctx.restore();
     }
 
+    // --- ULTRA BREAKER ---
     function createBricks() {
         bricks = [];
-        const cols = 7, rows = 5;
+        const cols = 7, rows = 6;
         const w = (canvas.width - 40) / cols;
         for(let r=0; r<rows; r++) {
             for(let c=0; c<cols; c++) {
-                bricks.push({ x: c*w + 20, y: r*40 + 100, w: w-10, h: 30, color: `hsl(${r*50 + 180}, 80%, 50%)`, active: true });
+                bricks.push({ x: c*w + 20, y: r*40 + 100, w: w-10, h: 30, color: `hsl(${r*45 + 200}, 80%, 55%)`, active: true });
             }
         }
     }
 
     function resetBall() {
         ball.x = canvas.width/2; ball.y = paddle.y - 20;
-        ball.dx = 5; ball.dy = -ball.speed;
+        ball.dx = 5 * (Math.random() > 0.5 ? 1 : -1); ball.dy = -ball.speed;
     }
 
     function updateBreaker() {
@@ -217,12 +199,23 @@
         if(ball.y + ball.r > paddle.y && ball.x > paddle.x && ball.x < paddle.x + paddle.w) {
             ball.dy = -ball.speed; ball.y = paddle.y - ball.r;
         }
+
+        let totalActivos = 0;
         bricks.forEach(b => {
-            if(b.active && ball.x > b.x && ball.x < b.x + b.w && ball.y > b.y && ball.y < b.y + b.h) {
-                b.active = false; ball.dy *= -1; score += 10;
-                scoreEl.innerText = score; chequearRblx(300);
+            if(b.active) {
+                totalActivos++;
+                if(ball.x > b.x && ball.x < b.x + b.w && ball.y > b.y && ball.y < b.y + b.h) {
+                    b.active = false; ball.dy *= -1; score += 10;
+                    scoreEl.innerText = score;
+                    // EXPLOSION
+                    for(let i=0; i<6; i++) particles.push({x: ball.x, y: ball.y, dx: (Math.random()-0.5)*8, dy: (Math.random()-0.5)*8, life: 1, color: b.color});
+                    chequearProgreso(10);
+                }
             }
         });
+
+        if(totalActivos === 0) createBricks(); // REGENERACION
+
         if(ball.y > canvas.height) {
             lives--;
             document.getElementById('corazon-roto').classList.add('animar-corazon');
@@ -230,6 +223,30 @@
             livesEl.innerText = lives + " VIDAS";
             if(lives <= 0) volverAlMenu(); else resetBall();
         }
+    }
+
+    // --- NEBULA ---
+    function checkLinesNebula() {
+        let rFull = [], cFull = [];
+        for(let r=0; r<8; r++) if(nebulaGrid[r].every(v => v !== 0)) rFull.push(r);
+        for(let c=0; c<8; c++) {
+            let f = true; for(let r=0; r<8; r++) if(nebulaGrid[r][c] === 0) f = false;
+            if(f) cFull.push(c);
+        }
+        rFull.forEach(r => {
+            for(let c=0; c<8; c++) { explosion(c, r, nebulaGrid[r][c]); nebulaGrid[r][c] = 0; }
+            score += 100; chequearProgreso(100);
+        });
+        cFull.forEach(c => {
+            for(let r=0; r<8; r++) { if(nebulaGrid[r][c]) { explosion(c, r, nebulaGrid[r][c]); nebulaGrid[r][c] = 0; } }
+            score += 100; chequearProgreso(100);
+        });
+        scoreEl.innerText = score;
+    }
+
+    function explosion(c, r, col) {
+        const sz = 40, off = (canvas.width - (8*sz))/2;
+        for(let i=0; i<12; i++) particles.push({x: c*sz+off+20, y: r*sz+150+20, dx: (Math.random()-0.5)*12, dy: (Math.random()-0.5)*12, life: 1, color: col});
     }
 
     function generateNebulaBlocks() {
@@ -240,7 +257,7 @@
             currentBlocks.push({
                 shape: shapes[Math.floor(Math.random()*shapes.length)],
                 color: colors[Math.floor(Math.random()*colors.length)],
-                x: (canvas.width/2 - 160) + i*110, y: canvas.height - 180, active: true
+                x: (canvas.width/2 - 165) + i*115, y: canvas.height - 180, active: true
             });
         }
     }
@@ -333,7 +350,7 @@
         transferModal.classList.remove('hidden');
     };
     document.getElementById('transfer-btn').onclick = () => {
-        window.open(`https://wa.me/50373826693?text=Tengo ${rblxPoints} puntos Rblx`, '_blank');
+        window.open(`https://wa.me/50373826693?text=Canjeando ${rblxPoints} puntos RBLX`, '_blank');
         rblxPoints = 0; localStorage.setItem('rblxPoints', 0); rblxEl.innerText = "0"; cerrarModal();
     };
 </script>
